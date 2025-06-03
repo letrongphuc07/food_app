@@ -9,6 +9,7 @@ import 'screens/home_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/admin/admin_screen.dart';
 import 'screens/user_profile_screen.dart';
+import 'providers/notification_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider(Provider.of<AuthProvider>(context, listen: false))),
       ],
       child: MaterialApp(
         title: 'Ứng dụng đặt đồ ăn',
