@@ -255,7 +255,7 @@ class _FoodManagementScreenState extends State<FoodManagementScreen> {
               final food = foods[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
+                child: ExpansionTile(
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: Image.network(
@@ -274,15 +274,6 @@ class _FoodManagementScreenState extends State<FoodManagementScreen> {
                     ),
                   ),
                   title: Text(food.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(food.description),
-                      Text('Giá: ${food.price.toStringAsFixed(0)}đ'),
-                      Text('Danh mục: ${food.category}'),
-                      Text('Trạng thái: ${food.isAvailable ? 'Đang phục vụ' : 'Tạm ngừng'}'),
-                    ],
-                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -298,6 +289,23 @@ class _FoodManagementScreenState extends State<FoodManagementScreen> {
                       ),
                     ],
                   ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('Mô tả', food.description),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Giá', '${food.price.toStringAsFixed(0)}đ'),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Danh mục', food.category),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Trạng thái', food.isAvailable ? 'Đang phục vụ' : 'Tạm ngừng'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -309,6 +317,26 @@ class _FoodManagementScreenState extends State<FoodManagementScreen> {
         child: const Icon(Icons.add),
         tooltip: 'Thêm món ăn mới',
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            '$label:',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(value),
+        ),
+      ],
     );
   }
 } 
