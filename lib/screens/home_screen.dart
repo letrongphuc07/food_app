@@ -5,6 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart'; // For loading 
 import 'cart_screen.dart'; // Import CartScreen
 import 'package:provider/provider.dart'; // Import Provider
 import '../providers/cart_provider.dart'; // Import CartProvider
+import 'notifications_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,7 +18,93 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _selectedCategory; // Add state for selected category
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _configureFCM();
+  }
+
+  Future<void> _configureFCM() async {
+    // Request permission for notifications
+    NotificationSettings settings = await _firebaseMessaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission');
+      // Get the initial token and save it
+      String? token = await _firebaseMessaging.getToken();
+      if (token != null && _auth.currentUser != null) {
+        await _saveTokenToFirestore(token);
+      }
+
+      // Listen for token changes and save them
+      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+        if (_auth.currentUser != null) {
+           _saveTokenToFirestore(newToken);
+        }
+      });
+
+      // Handle messages when the app is in the foreground
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('Got a message whilst in the foreground!');
+        print('Message data: ${message.data}');
+
+        if (message.notification != null) {
+          print('Message also contained a notification: ${message.notification}');
+          // You might want to show a local notification here
+        }
+      });
+
+      // Handle messages when the app is in the background or terminated
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    } else {
+      print('User declined or has not accepted permission');
+    }
+  }
+
+  Future<void> _saveTokenToFirestore(String token) async {
+    if (_auth.currentUser != null) {
+      try {
+        await _firestore.collection('users').doc(_auth.currentUser!.uid).set({
+          'fcmToken': token,
+          'lastLoginAt': FieldValue.serverTimestamp(), // Update last login as well
+        }, SetOptions(merge: true)); // Use merge: true to avoid overwriting other user data
+        print('FCM token saved for user: ${_auth.currentUser!.uid}');
+      } catch (e) {
+        print('Error saving FCM token: $e');
+      }
+    }
+  }
+
+  // Top-level function to handle background messages
+  @pragma('vm:entry-point')
+  static Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+    // If you're using other Firebase services in the background, such as Firestore,
+    // make sure you call `initializeApp` before using them.
+    // await Firebase.initializeApp(); // Uncomment if needed
+
+    print("Handling a background message: ${message.messageId}");
+    // You can perform background tasks here, e.g., update UI, save data
+  }
+
+  @override
+  void dispose() {
+    // Consider disposing listeners if necessary, although onTokenRefresh listener
+    // is typically long-lived and managed by the plugin.
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,27 +112,40 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Ứng dụng đặt đồ ăn'),
         actions: [
-          Consumer<CartProvider>( // Use Consumer to listen to cart changes
-            builder: (context, cartProvider, child) {
+          // Notification Button
+          StreamBuilder<QuerySnapshot>(
+            stream: _firestore
+                .collection('notifications')
+                .where('userId', isEqualTo: _auth.currentUser?.uid)
+                .where('isRead', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
               return Stack(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.shopping_cart),
+                    icon: const Icon(Icons.notifications),
                     onPressed: () {
-                      // Navigate to cart screen
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const CartScreen(),
-                      ));
+                      if (_auth.currentUser != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationsScreen(
+                              userId: _auth.currentUser!.uid,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
-                  if (cartProvider.itemCount > 0) // Show badge if cart is not empty
+                  if (unreadCount > 0)
                     Positioned(
                       right: 5,
                       top: 5,
                       child: Container(
                         padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: Colors.red, // Badge color
+                          color: Colors.red,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         constraints: const BoxConstraints(
@@ -51,7 +153,49 @@ class _HomeScreenState extends State<HomeScreen> {
                           minHeight: 16,
                         ),
                         child: Text(
-                          cartProvider.itemCount.toString(), // Item count
+                          unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          // Cart Button
+          Consumer<CartProvider>(
+            builder: (context, cartProvider, child) {
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart),
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const CartScreen(),
+                      ));
+                    },
+                  ),
+                  if (cartProvider.itemCount > 0)
+                    Positioned(
+                      right: 5,
+                      top: 5,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          cartProvider.itemCount.toString(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,

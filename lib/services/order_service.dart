@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/order_model.dart';
+import 'notification_service.dart';
 
 class OrderService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'orders';
+  final NotificationService _notificationService = NotificationService();
 
   // Get all orders
   Stream<List<OrderModel>> getOrders() {
@@ -78,7 +80,39 @@ class OrderService {
         updateData['deliveredAt'] = FieldValue.serverTimestamp();
       }
 
+      // Get order details before updating
+      final orderDoc = await _firestore.collection(_collection).doc(id).get();
+      final orderData = orderDoc.data();
+      final userId = orderData?['userId'] as String?;
+
+      // Update order status
       await _firestore.collection(_collection).doc(id).update(updateData);
+
+      // Send notification if user ID exists
+      if (userId != null) {
+        String message = '';
+        switch (status) {
+          case 'Đang chờ xử lý':
+            message = 'Đơn hàng #${id.substring(0, 6)} của bạn đang chờ xử lý';
+            break;
+          case 'Đang chuẩn bị':
+            message = 'Đơn hàng #${id.substring(0, 6)} của bạn đang được chuẩn bị';
+            break;
+          case 'Đã hoàn thành':
+            message = 'Đơn hàng #${id.substring(0, 6)} của bạn đã hoàn thành';
+            break;
+          case 'Đã bị hủy':
+            message = 'Đơn hàng #${id.substring(0, 6)} của bạn đã bị hủy';
+            break;
+        }
+
+        await _notificationService.sendOrderStatusNotification(
+          userId: userId,
+          orderId: id,
+          status: status,
+          message: message,
+        );
+      }
     } catch (e) {
       throw Exception('Failed to update order status: $e');
     }

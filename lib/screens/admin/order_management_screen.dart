@@ -24,10 +24,10 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             child: ListBody(
               children: <Widget>[
                 // Example statuses. You can customize this list.
-                _buildStatusOption(context, order, 'Pending', 'Đang chờ xử lý'),
-                _buildStatusOption(context, order, 'Processing', 'Đang chuẩn bị'),
-                _buildStatusOption(context, order, 'Completed', 'Đã hoàn thành'),
-                _buildStatusOption(context, order, 'Cancelled', 'Đã hủy'),
+                _buildStatusOption(context, order, 'Đang chờ xử lý', 'Đang chờ xử lý'),
+                _buildStatusOption(context, order, 'Đang chuẩn bị', 'Đang chuẩn bị'),
+                _buildStatusOption(context, order, 'Đã hoàn thành', 'Đã hoàn thành'),
+                _buildStatusOption(context, order, 'Đã hủy', 'Đã hủy'),
               ],
             ),
           ),
