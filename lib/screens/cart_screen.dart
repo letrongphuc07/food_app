@@ -62,7 +62,7 @@ class _CartScreenState extends State<CartScreen> {
                           child: Icon(Icons.fastfood),
                         ),
                   title: Text(cartItem.name),
-                  subtitle: Text('Giá: \$${cartItem.price.toStringAsFixed(2)}'),
+                  subtitle: Text('Giá: ${cartItem.price.toStringAsFixed(0)}₫'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -103,7 +103,7 @@ class _CartScreenState extends State<CartScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Tổng cộng: \$${cartProvider.totalAmount.toStringAsFixed(2)}',
+                    'Tổng cộng: ${cartProvider.totalAmount.toStringAsFixed(0)}₫',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   _isLoading

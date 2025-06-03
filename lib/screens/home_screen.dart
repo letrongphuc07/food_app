@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween, // Arrange price and button
                   children: [
                     Text(
-                      '\$${food.price.toStringAsFixed(2)}',
+                      '${food.price.toStringAsFixed(0)}₫', // Changed from $ to ₫ and removed .00
                       style: TextStyle(
                         color: Colors.orange[700],
                         fontWeight: FontWeight.bold,

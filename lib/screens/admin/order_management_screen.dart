@@ -92,7 +92,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tổng cộng: \\\$${order.totalAmount.toStringAsFixed(2)}'), // Translated total
+                    Text('Tổng cộng: ${order.totalAmount.toStringAsFixed(0)}₫'), // Changed from \\\$ to ₫ and removed .00
                     Text('Trạng thái: ${order.status}'), // Translated status label (status value remains English for logic)
                     Text('Thời gian: ${order.orderTime.toLocal().toString().split(' ')[0]}'), // Display date only
                     // TODO: Display more order details if needed
