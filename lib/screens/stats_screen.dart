@@ -36,13 +36,16 @@ class _StatsScreenState extends State<StatsScreen> {
           int totalOrders = allOrders.length;
 
           Map<String, double> dailyRevenueMap = {};
-          for (var order in allOrders) {
-            final status = order.status.trim();
-            if (order.status.trim() == 'Đã hoàn thành' && order.deliveredAt != null && order.totalAmount > 0) {
-              final date = DateFormat('yyyy-MM-dd').format(order.deliveredAt!.toLocal());
-              dailyRevenueMap[date] = (dailyRevenueMap[date] ?? 0) + order.totalAmount;
-              totalRevenue += order.totalAmount;
-            }
+          Map<String, double> monthlyRevenueMap = {};
+          final completedOrders = allOrders.where((order) => order.status.trim() == 'Đã hoàn thành' && order.deliveredAt != null && order.totalAmount > 0).toList();
+
+          for (var order in completedOrders) {
+            final date = DateFormat('yyyy-MM-dd').format(order.deliveredAt!.toLocal());
+            dailyRevenueMap[date] = (dailyRevenueMap[date] ?? 0) + order.totalAmount;
+            totalRevenue += order.totalAmount;
+
+            final month = DateFormat('yyyy-MM').format(order.deliveredAt!.toLocal());
+            monthlyRevenueMap[month] = (monthlyRevenueMap[month] ?? 0) + order.totalAmount;
           }
 
           final sortedDailyRevenueEntries = dailyRevenueMap.entries.toList()
@@ -77,6 +80,21 @@ class _StatsScreenState extends State<StatsScreen> {
             ..sort((a, b) => b.orderTime.compareTo(a.orderTime));
 
           final displayRecentOrders = recentOrders.take(5).toList();
+
+          final sortedMonthlyRevenueEntries = monthlyRevenueMap.entries.toList()
+            ..sort((a, b) => a.key.compareTo(b.key));
+
+          final monthlyBarChartGroups = sortedMonthlyRevenueEntries.asMap().entries.map((entry) {
+            final index = entry.key;
+            final monthRevenueEntry = entry.value;
+            return _generateBarGroup(index, monthRevenueEntry.value.toDouble());
+          }).toList();
+
+          final monthlyBarChartXTitles = Map.fromEntries(sortedMonthlyRevenueEntries.asMap().entries.map((entry) {
+            final index = entry.key;
+            final monthRevenueEntry = entry.value;
+            return MapEntry(index, DateFormat('MM/yy').format(DateTime.parse('${monthRevenueEntry.key}-01')));
+          }));
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -137,6 +155,40 @@ class _StatsScreenState extends State<StatsScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text('Tổng quan bán hàng (Doanh thu)', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 200,
+                  child: BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: sortedMonthlyRevenueEntries.isNotEmpty ? sortedMonthlyRevenueEntries.map((e) => e.value).reduce((a, b) => a > b ? a : b) * 1.2 : 100,
+                      barTouchData: BarTouchData(enabled: false),
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              final title = monthlyBarChartXTitles[value.toInt()] ?? '';
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                space: 4.0,
+                                child: Text(title, style: const TextStyle(fontSize: 10), textAlign: TextAlign.center),
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      barGroups: monthlyBarChartGroups,
                     ),
                   ),
                 ),
