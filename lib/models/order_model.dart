@@ -45,6 +45,10 @@ class OrderModel {
   final String status; // e.g., 'Pending', 'Processing', 'Completed', 'Cancelled'
   final String? shippingAddress; // Optional
   final DateTime? deliveredAt;
+  final String? paymentMethod; // Add payment method field
+  final String? lastFourDigits; // Add last four digits of card
+  final String? cardHolder; // Add card holder name
+  final String? expiryDate; // Add card expiry date
 
   OrderModel({
     required this.id,
@@ -55,6 +59,10 @@ class OrderModel {
     required this.status,
     this.shippingAddress,
     this.deliveredAt,
+    this.paymentMethod, // Add payment method to constructor
+    this.lastFourDigits, // Add lastFourDigits to constructor
+    this.cardHolder, // Add cardHolder to constructor
+    this.expiryDate, // Add expiryDate to constructor
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -73,6 +81,10 @@ class OrderModel {
       status: json['status'] as String? ?? 'Unknown', // Handle potential missing status
       shippingAddress: json['shippingAddress'] as String?,
       deliveredAt: (json['deliveredAt'] as Timestamp?)?.toDate(), // Handle potential missing deliveredAt
+      paymentMethod: json['paymentMethod'] as String?, // Parse payment method
+      lastFourDigits: json['cardInfo']?['lastFourDigits'] as String?, // Parse lastFourDigits from cardInfo
+      cardHolder: json['cardInfo']?['cardHolder'] as String?, // Parse cardHolder from cardInfo
+      expiryDate: json['cardInfo']?['expiryDate'] as String?, // Parse expiryDate from cardInfo
     );
   }
 
@@ -85,6 +97,12 @@ class OrderModel {
       'status': status,
       'shippingAddress': shippingAddress,
       'deliveredAt': deliveredAt != null ? Timestamp.fromDate(deliveredAt!) : null,
+      'paymentMethod': paymentMethod, // Include payment method in toJson
+      if (paymentMethod == 'card') 'cardInfo': {
+        'lastFourDigits': lastFourDigits,
+        'cardHolder': cardHolder,
+        'expiryDate': expiryDate,
+      }, // Include card info if payment method is card
     };
   }
 
@@ -97,6 +115,10 @@ class OrderModel {
     String? status,
     String? shippingAddress,
     DateTime? deliveredAt,
+    String? paymentMethod, // Add payment method to copyWith
+    String? lastFourDigits, // Add lastFourDigits to copyWith
+    String? cardHolder, // Add cardHolder to copyWith
+    String? expiryDate, // Add expiryDate to copyWith
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -107,6 +129,10 @@ class OrderModel {
       status: status ?? this.status,
       shippingAddress: shippingAddress ?? this.shippingAddress,
       deliveredAt: deliveredAt ?? this.deliveredAt,
+      paymentMethod: paymentMethod ?? this.paymentMethod, // Copy payment method
+      lastFourDigits: lastFourDigits ?? this.lastFourDigits, // Copy lastFourDigits
+      cardHolder: cardHolder ?? this.cardHolder, // Copy cardHolder
+      expiryDate: expiryDate ?? this.expiryDate, // Copy expiryDate
     );
   }
 } 

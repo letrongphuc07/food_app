@@ -87,26 +87,49 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             final order = orders[index];
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: ListTile(
+              child: ExpansionTile(
                 title: Text('Đơn hàng #${order.id.substring(0, 6)}...'), // Translated title
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Tổng cộng: ${order.totalAmount.toStringAsFixed(0)}₫'), // Changed from \\\$ to ₫ and removed .00
-                    Text('Trạng thái: ${order.status}'), // Translated status label (status value remains English for logic)
-                    Text('Thời gian: ${order.orderTime.toLocal().toString().split(' ')[0]}'), // Display date only
-                    // TODO: Display more order details if needed
-                  ],
-                ),
-                trailing: IconButton(
-                   icon: const Icon(Icons.edit),
-                   onPressed: () {
-                     _showStatusUpdateDialog(order); // Show dialog to update status
-                   },
-                ),
-                onTap: () {
-                   // TODO: Navigate to Order Detail Screen (optional)
-                },
+                subtitle: Text('Tổng cộng: ${order.totalAmount.toStringAsFixed(0)}₫'),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Trạng thái: ${order.status}'), // Translated status label
+                        const SizedBox(height: 4),
+                        Text('Thời gian: ${order.orderTime.toLocal().toString().split(' ')[0]}'), // Display date only
+                        const SizedBox(height: 4),
+                        Text('Phương thức thanh toán: ${order.paymentMethod ?? "N/A"}'), // Display payment method
+                        // Display card information if payment method is card
+                        if (order.paymentMethod == 'card' && order.lastFourDigits != null) ...[
+                          const SizedBox(height: 4),
+                          Text('Số thẻ (4 số cuối): ${order.lastFourDigits}'),
+                          if (order.cardHolder != null) ...[
+                            const SizedBox(height: 4),
+                            Text('Chủ thẻ: ${order.cardHolder}'),
+                          ],
+                          if (order.expiryDate != null) ...[
+                            const SizedBox(height: 4),
+                            Text('Ngày hết hạn: ${order.expiryDate}'),
+                          ],
+                        ],
+                        // TODO: Display order items
+                         const SizedBox(height: 8),
+                         Align(
+                           alignment: Alignment.centerRight,
+                           child: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                _showStatusUpdateDialog(order); // Show dialog to update status
+                              },
+                              tooltip: 'Cập nhật trạng thái', // Translated tooltip
+                           ),
+                         ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             );
           },
