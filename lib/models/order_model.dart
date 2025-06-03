@@ -17,11 +17,11 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
-      foodId: json['foodId'] as String,
-      name: json['name'] as String,
-      price: (json['price'] as num).toDouble(),
-      imageUrl: json['imageUrl'] as String,
-      quantity: json['quantity'] as int,
+      foodId: json['foodId'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      imageUrl: json['imageUrl'] as String? ?? '',
+      quantity: (json['quantity'] as int?) ?? 0,
     );
   }
 
@@ -58,15 +58,21 @@ class OrderModel {
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
+    // Helper function to parse dynamic fields safely
+    T? safeCast<T>(dynamic value) {
+      if (value is T) return value;
+      return null;
+    }
+
     return OrderModel(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      items: (json['items'] as List).map((i) => OrderItem.fromJson(i)).toList(),
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      orderTime: (json['orderTime'] as Timestamp).toDate(),
-      status: json['status'] as String,
+      id: json['id'] as String? ?? '', // Handle potential null ID (though Firestore IDs aren't null)
+      userId: json['userId'] as String? ?? '', // Handle potential missing userId
+      items: (json['items'] as List?)?.map((i) => OrderItem.fromJson(i as Map<String, dynamic>)).toList() ?? [], // Handle potential missing items or non-list
+      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0, // Handle potential missing totalAmount or non-num
+      orderTime: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(), // Handle potential missing createdAt
+      status: json['status'] as String? ?? 'Unknown', // Handle potential missing status
       shippingAddress: json['shippingAddress'] as String?,
-      deliveredAt: json['deliveredAt'] != null ? (json['deliveredAt'] as Timestamp).toDate() : null,
+      deliveredAt: (json['deliveredAt'] as Timestamp?)?.toDate(), // Handle potential missing deliveredAt
     );
   }
 

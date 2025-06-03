@@ -11,7 +11,7 @@ class OrderService {
   Stream<List<OrderModel>> getOrders() {
     return _firestore
         .collection(_collection)
-        .orderBy('orderTime', descending: true)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -243,7 +243,7 @@ class OrderService {
   Stream<List<OrderModel>> getAllOrders() {
     return _firestore
         .collection('orders')
-        .orderBy('orderTime', descending: true)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => OrderModel.fromJson({
               ...doc.data(),

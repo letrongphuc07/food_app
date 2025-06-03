@@ -119,12 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, notificationProvider, child) {
               return Stack(
                 children: [
-                  IconButton(
+          IconButton(
                     icon: const Icon(Icons.notifications),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
                           builder: (context) => NotificationsScreen(userId: _auth.currentUser?.uid ?? ''),
                         ),
                       );
@@ -152,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                      ),
+                ),
                     ),
                 ],
               );
