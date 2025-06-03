@@ -218,63 +218,70 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Quản lý người dùng'),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('users').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Lỗi tải danh sách người dùng: ${snapshot.error}'));
+            return Center(child: Text('Lỗi: ${snapshot.error}'));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Chưa có người dùng nào.'));
-          }
-
-          final users = snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return UserModel.fromJson({
-              ...data,
-              'id': doc.id,
-            });
-          }).toList();
+          final users = snapshot.data!.docs;
 
           return ListView.builder(
             itemCount: users.length,
             itemBuilder: (context, index) {
-              final user = users[index];
+              final user = users[index].data() as Map<String, dynamic>;
+              final userId = users[index].id;
+
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(user.name[0].toUpperCase()),
-                  ),
-                  title: Text(user.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Email: ${user.email}'),
-                      Text('Vai trò: ${user.role == 'admin' ? 'Quản trị viên' : 'Người dùng'}'),
-                      Text('Trạng thái: ${user.isActive ? 'Đang hoạt động' : 'Đã khóa'}'),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _showUserDialog(user),
-                        tooltip: 'Sửa thông tin',
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ExpansionTile(
+                  title: Text(user['name'] ?? 'Chưa có tên'),
+                  subtitle: Text(user['email'] ?? 'Chưa có email'),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('Email', user['email'] ?? 'Chưa có'),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Họ và tên', user['name'] ?? 'Chưa có'),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Giới tính', user['gender'] ?? 'Chưa có'),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Số điện thoại', user['phone'] ?? 'Chưa có'),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Địa chỉ', user['address'] ?? 'Chưa có'),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () => _editUser(context, userId, user),
+                                child: const Text('Chỉnh sửa'),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: () => _deleteUser(context, userId),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                ),
+                                child: const Text('Xóa'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _showDeleteConfirmation(user),
-                        tooltip: 'Xóa người dùng',
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -287,5 +294,138 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         tooltip: 'Thêm người dùng mới',
       ),
     );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            '$label:',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(value),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _editUser(BuildContext context, String userId, Map<String, dynamic> user) async {
+    final nameController = TextEditingController(text: user['name'] ?? '');
+    final genderController = TextEditingController(text: user['gender'] ?? '');
+    final phoneController = TextEditingController(text: user['phone'] ?? '');
+    final addressController = TextEditingController(text: user['address'] ?? '');
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chỉnh sửa thông tin người dùng'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Họ và tên'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: genderController,
+                decoration: const InputDecoration(labelText: 'Giới tính'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: addressController,
+                decoration: const InputDecoration(labelText: 'Địa chỉ'),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                await _firestore.collection('users').doc(userId).update({
+                  'name': nameController.text.trim(),
+                  'gender': genderController.text.trim(),
+                  'phone': phoneController.text.trim(),
+                  'address': addressController.text.trim(),
+                });
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã cập nhật thông tin người dùng')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi cập nhật: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteUser(BuildContext context, String userId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: const Text('Bạn có chắc chắn muốn xóa người dùng này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _firestore.collection('users').doc(userId).delete();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xóa người dùng')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi xóa người dùng: $e')),
+          );
+        }
+      }
+    }
   }
 } 
