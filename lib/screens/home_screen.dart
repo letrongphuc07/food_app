@@ -113,14 +113,14 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Ứng dụng đặt đồ ăn'),
         actions: [
-          // User Profile Button
+          // Notifications Button
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.notifications),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const UserProfileScreen(),
+                  builder: (context) => NotificationsScreen(userId: _auth.currentUser?.uid ?? ''),
                 ),
               );
             },

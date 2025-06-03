@@ -8,6 +8,7 @@ import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/admin/admin_screen.dart';
+import 'screens/user_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,7 +85,7 @@ class _UserMainScreenState extends State<UserMainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const StatsScreen(),
+    const UserProfileScreen(),
   ];
 
   @override
@@ -104,8 +105,8 @@ class _UserMainScreenState extends State<UserMainScreen> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart),
-            label: 'Stats',
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
