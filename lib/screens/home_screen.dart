@@ -233,16 +233,12 @@ class _HomeScreenState extends State<HomeScreen> {
           }).toList();
 
           // Extract unique categories and add 'Tất cả' option
-          final categories = ['Tất cả'] + allFoods.map((food) => food.category).toSet().toList(); // Add 'Tất cả'
+          final categories = ['Tất cả'] + allFoods.map((food) => food.category).toSet().toList();
 
-          // Filter popular items (example: top rated or fixed number)
           // Apply category filter if a category is selected
           final filteredFoods = _selectedCategory == null || _selectedCategory == 'Tất cả'
               ? allFoods
               : allFoods.where((food) => food.category == _selectedCategory).toList();
-
-          // For simplicity, let's just take the first few from filteredFoods for now
-          final popularItems = filteredFoods.take(4).toList(); 
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -292,9 +288,9 @@ class _HomeScreenState extends State<HomeScreen> {
               
               const SizedBox(height: 24),
               
-              // Popular Items
+              // Food List
               Text(
-                'Món ăn phổ biến',
+                'Danh sách món ăn', // Changed title from Popular Items
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               
@@ -309,9 +305,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
-                itemCount: popularItems.length,
+                itemCount: filteredFoods.length, // Use the count of filteredFoods
                 itemBuilder: (context, index) {
-                  final food = popularItems[index];
+                  final food = filteredFoods[index]; // Use filteredFoods here
                   return _buildFoodCard(food);
                 },
               ),
