@@ -76,7 +76,7 @@ class OrderService {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      if (status == 'Completed') {
+      if (status == 'Đã hoàn thành') {
         updateData['deliveredAt'] = FieldValue.serverTimestamp();
       }
 

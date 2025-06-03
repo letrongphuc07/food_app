@@ -31,10 +31,12 @@ class _StatsScreenState extends State<StatsScreen> {
             return Center(child: Text('Lỗi tải dữ liệu đơn hàng: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            print('StatsScreen: No order data available.');
             return const Center(child: Text('Chưa có dữ liệu đơn hàng.'));
           }
 
           final allOrders = snapshot.data!;
+          print('StatsScreen: Received ${allOrders.length} orders.');
 
           // --- Data Processing for Charts and Summary ---
 
@@ -44,13 +46,31 @@ class _StatsScreenState extends State<StatsScreen> {
 
           // Aggregate Daily Revenue for LineChart
           Map<String, double> dailyRevenueMap = {};
+          final targetStatus = 'Đã hoàn thành';
+          final targetStatusCodes = targetStatus.codeUnits;
+
           for (var order in allOrders) {
-            if (order.status == 'Completed' && order.deliveredAt != null) {
+            final orderStatus = order.status.trim();
+            final orderStatusCodes = orderStatus.codeUnits;
+
+            print('StatsScreen Debug: Order ID: ${order.id}'); // Debug print
+            print('StatsScreen Debug: Status from Firestore (trimmed): "$orderStatus"'); // Debug print
+            print('StatsScreen Debug: Status code units from Firestore: $orderStatusCodes'); // Debug print code units
+            print('StatsScreen Debug: Target status for revenue: "$targetStatus"'); // Debug print
+            print('StatsScreen Debug: Target status code units: $targetStatusCodes'); // Debug print code units
+
+            // Compare using code units
+            if (orderStatusCodes.toString() == targetStatusCodes.toString() && order.deliveredAt != null) {
               final date = DateFormat('yyyy-MM-dd').format(order.deliveredAt!.toLocal());
               dailyRevenueMap[date] = (dailyRevenueMap[date] ?? 0) + order.totalAmount;
               totalRevenue += order.totalAmount; // Also calculate total revenue here
+              print('StatsScreen: Added order ${order.id} with status ${order.status} and amount ${order.totalAmount} to revenue. Current totalRevenue: $totalRevenue');
+            } else {
+              print('StatsScreen: Skipping order ${order.id} with status ${order.status} for revenue calculation.');
             }
           }
+
+          print('StatsScreen: Final calculated totalRevenue: $totalRevenue');
 
           final sortedDailyRevenueEntries = dailyRevenueMap.entries.toList()
             ..sort((a, b) => a.key.compareTo(b.key));
@@ -92,7 +112,9 @@ class _StatsScreenState extends State<StatsScreen> {
           }));
 
           // Filter Recent Orders (take the last 5 completed or most recent)
-          final recentOrders = allOrders.where((order) => order.status == 'Completed').toList();
+          print('StatsScreen Debug: Filtering recent orders with target status: Đã hoàn thành'); // Debug print
+          // Compare using code units
+          final recentOrders = allOrders.where((order) => order.status.trim().codeUnits.toString() == 'Đã hoàn thành'.codeUnits.toString()).toList();
           recentOrders.sort((a, b) => b.orderTime.compareTo(a.orderTime)); // Sort by time descending
           final displayRecentOrders = recentOrders.take(5).toList(); // Take top 5
 
